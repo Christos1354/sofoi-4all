@@ -131,6 +131,11 @@ textarea{width:100%;min-height:120px;border:2px solid #c4b5fd;border-radius:14px
 .entry .ed{font-size:15px;color:var(--muted);margin:2px 0 8px}
 .entry .row{margin-top:4px}
 .entry .row .big{margin:6px 0}
+mark{background:#ffe066;color:#2a1a00;border-radius:4px;padding:0 2px}
+.fres{display:block;width:100%;text-align:left;border:0;border-radius:18px;padding:14px 16px;margin:10px 0;background:rgba(255,254,246,.96);color:#2a1a00;box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:18px;line-height:1.45}
+.fres small{display:block;font-size:15px;font-weight:800;color:#8a5a00;margin-bottom:4px}
+.fres b{display:block;font-size:19px;margin-bottom:4px}
+#fq{width:100%;font-size:22px;padding:14px;border-radius:14px;border:2px solid #e0c060;box-sizing:border-box}
 .empty{text-align:center;color:#e8dcb0;font-size:19px;margin:20px 0}
 /* παράθυρο */
 .sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;padding:12px;z-index:50}
@@ -148,7 +153,7 @@ textarea{width:100%;min-height:120px;border:2px solid #c4b5fd;border-radius:14px
 <div class="wrap" id="app"></div>
 <script>
 /* =====================================================================
-   7 ΗΜΕΡΕΣ ΜΕ ΤΟΥΣ ΣΟΦΟΥΣ — Christos S Magides — 26-10-2026
+   7 ΗΜΕΡΕΣ ΜΕ ΤΟΥΣ ΣΟΦΟΥΣ — Christos S Magides — 26-10-2026 · αναζήτηση με ανορθογραφίες 30-10-2026
    23 σοφοί: Επίκτητος · Σωκράτης · Ζήνων · Πυθαγόρας · Αριστοτέλης · Σενέκας · Επίκουρος · Καντ
    · Διογένης · Πρωταγόρας · Ηράκλειτος · Πλάτων · Μάρκος Αυρήλιος · Βούδας · Λάο Τσε · Κομφούκιος
    · Σπινόζα · Βιβεκανάντα · Ραματσαράκα · Γκιμπράν · Κρισναμούρτι · Φρανκλ · Βιβλίο της Ουράντια
@@ -654,6 +659,7 @@ function vHelp(){
   '<div id="hres">'+(sel?helpResults([sel]):'')+'</div>'+
   '<div class="lbl" style="color:var(--gold);margin:18px 0 6px">🏷️ '+L('Ή διαλέξτε ένα θέμα:','Or choose a topic:')+'</div>'+
   '<div class="chips">'+TOPICS.map(function(t){return '<button class="chip'+(sel&&sel.id===t.id?' on':'')+'" onclick="EP.go(\'help-'+t.id+'\')">'+t.e+' '+esc(T(t.n))+'</button>'}).join('')+'</div>'+
+  '<button class="big blue small" onclick="EP.go(\'find\')">🔎 '+L('Αναζήτηση λέξης ή φράσης','Search a word or phrase')+'</button>'+
   '<button class="big ghost small" onclick="EP.go(\'\')">🏛️ '+L('Όλοι οι σοφοί','All the sages')+'</button>'+
   safeLine()+foot();
 }
@@ -663,6 +669,97 @@ function helpResults(ts){
   ts.slice(0,2).forEach(function(t){topicRefs(t).forEach(function(x){var k=x.c.id+x.i;if(!seen[k]&&out.length<5){seen[k]=1;out.push(x)}})});
   return '<div class="lbl" style="color:var(--gold);margin:14px 0 4px">'+ts.slice(0,2).map(function(t){return t.e+' '+esc(T(t.n))}).join(' · ')+'</div>'+
    '<p class="progt" style="text-align:left;margin:0 0 6px">'+L('Οι σοφοί σάς προτείνουν να ξεκινήσετε από εδώ:','The sages suggest you start here:')+'</p>'+out.map(refCard).join('');
+}
+
+
+/* ---------------- ΝΕΟ 30-10-2026: ΑΝΑΖΗΤΗΣΗ ΛΕΞΗΣ Ή ΦΡΑΣΗΣ ----------------
+   Ψάχνει σε όλους τους σοφούς (στη γλώσσα που διαβάζετε) και στις σημειώσεις σας.
+   Χωρίς τόνους και κεφαλαία· βρίσκει και φράσεις (π.χ. «δεν εξαρτάται»). */
+var FINDQ='',FINDHL=false;
+try{FINDQ=sessionStorage.getItem('sofoi7-q')||''}catch(e){}
+/* Τρία επίπεδα ταιριάσματος:
+   1) ακριβώς (χωρίς τόνους/κεφαλαία)
+   2) «ηχητικά»: ι=η=υ=ει=οι, ε=αι, ο=ω, διπλά γράμματα = μονά, γκ=γγ  (π.χ. «ειρινη» βρίσκει «ειρήνη»)
+   3) με ένα-δύο λάθη πληκτρολόγησης ανά λέξη (π.χ. «φιλοσοφα» βρίσκει «φιλοσοφία») */
+function nmap(s){var out='',a=[],b=[];for(var i=0;i<s.length;i++){var n=norm(s[i]);for(var j=0;j<n.length;j++){out+=n[j];a.push(i);b.push(i+1)}}return {n:out,a:a,b:b}}
+var KEEP2={'ου':1,'αυ':1,'ευ':1},TO_I={'ει':1,'οι':1,'υι':1};
+function phon(m){
+  var t=m.n,out='',a=[],b=[],i=0;
+  function put(ch,x,y){if(out.length&&out[out.length-1]===ch&&/[^\s\d]/.test(ch)){b[b.length-1]=y;return}out+=ch;a.push(x);b.push(y)}
+  while(i<t.length){var two=t.substr(i,2),c=t[i];
+    if(KEEP2[two]){put(two[0],m.a[i],m.b[i]);put(two[1],m.a[i+1],m.b[i+1]);i+=2;continue}
+    if(TO_I[two]){put('ι',m.a[i],m.b[i+1]);i+=2;continue}
+    if(two==='αι'){put('ε',m.a[i],m.b[i+1]);i+=2;continue}
+    if(two==='γκ'){put('γ',m.a[i],m.b[i+1]);i+=2;continue}
+    if(c==='η'||c==='υ')c='ι';else if(c==='ω')c='ο';
+    put(c,m.a[i],m.b[i]);i++}
+  return {n:out,a:a,b:b};
+}
+function nq(q){return norm(q).replace(/\s+/g,' ').trim()}
+function lev(x,y,max){if(Math.abs(x.length-y.length)>max)return max+1;var p=[],i,j;for(j=0;j<=y.length;j++)p[j]=j;
+  for(i=1;i<=x.length;i++){var c=[i],lo=i;for(j=1;j<=y.length;j++){c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(x[i-1]===y[j-1]?0:1));if(c[j]<lo)lo=c[j]}if(lo>max)return max+1;p=c}return p[y.length]}
+/* επιστρέφει τα κομμάτια [αρχή,τέλος] του κειμένου που ταιριάζουν, στο επίπεδο mode */
+function spans(text,q,mode){
+  var m=nmap(text),r=[];
+  if(mode===1){var qq=nq(q),pos=m.n.indexOf(qq);while(pos>=0&&qq){r.push([m.a[pos],m.b[pos+qq.length-1]]);pos=m.n.indexOf(qq,pos+qq.length)}return r}
+  var P=phon(m),pq=phon(nmap(nq(q))).n;
+  if(mode===2){var p2=P.n.indexOf(pq);while(p2>=0&&pq){r.push([P.a[p2],P.b[p2+pq.length-1]]);p2=P.n.indexOf(pq,p2+pq.length)}return r}
+  /* mode 3: λέξη-λέξη με ανοχή */
+  var qw=pq.split(' ').filter(Boolean);if(!qw.length||qw.join('').length<4)return r;
+  var W=[],re=/[^\s.,;:!?·«»"“”‘’()\[\]—–\-…\/]+/g,mm;while((mm=re.exec(P.n)))W.push({w:mm[0],s:mm.index,e:mm.index+mm[0].length});
+  for(var k=0;k+qw.length<=W.length;k++){var ok=true;
+    for(var t=0;t<qw.length&&ok;t++){var a=qw[t],w=W[k+t].w,last=t===qw.length-1;
+      var tol=a.length>=8?2:a.length>=4?1:0;
+      if(w===a)continue;
+      if(last&&a.length>=4&&w.indexOf(a)===0)continue;               /* αρχή λέξης */
+      if(last&&a.length>=5&&lev(a,w.slice(0,a.length),tol)<=tol)continue; /* αρχή λέξης με λάθος */
+      if(tol&&lev(a,w,tol)<=tol)continue;ok=false}
+    if(ok){r.push([P.a[W[k].s],P.b[W[k+qw.length-1].e-1]]);k+=qw.length-1}}
+  return r;
+}
+function snipAt(text,sp){
+  var a=sp[0],b=sp[1],from=Math.max(0,a-70),to=Math.min(text.length,b+90);
+  if(from>0){var x=text.indexOf(' ',from);if(x>0&&x<a)from=x+1}
+  if(to<text.length){var y=text.lastIndexOf(' ',to);if(y>b)to=y}
+  return (from>0?'…':'')+esc(text.slice(from,a))+'<mark>'+esc(text.slice(a,b))+'</mark>'+esc(text.slice(b,to))+(to<text.length?'…':'');
+}
+var FINDMODE=1;
+var FIELDS=[['tr',['📜 Λόγιο','📜 Saying']],['t',['🏷️ Τίτλος','🏷️ Title']],['simple',['💡 Με απλά λόγια','💡 In plain words']],['life',['🏡 Παράδειγμα','🏡 Example']],['am',['☀️ Το πρωί','☀️ Morning']],['ex',['🌿 Άσκηση','🌿 Exercise']],['pm',['🌙 Βραδινή εξέταση','🌙 Evening review']]];
+function findAll(q,mode){
+  var out=[];if(nq(q).length<2)return out;
+  COURSES.forEach(function(c){c.days.forEach(function(d,i){var D=d[LANG];if(!D)return;
+    for(var f=0;f<FIELDS.length;f++){var tx=String(D[FIELDS[f][0]]||''),sp=spans(tx,q,mode);if(sp.length){out.push({c:c,i:i,lbl:T(FIELDS[f][1]),sn:snipAt(tx,sp[0])});break}}
+    var nt=noteText(c.id,i);if(nt){var s2=spans(nt,q,mode);if(s2.length)out.push({c:c,i:i,lbl:L('📔 Η σημείωσή σας','📔 Your note'),sn:snipAt(nt,s2[0])})}
+  })});
+  return out;
+}
+function findResults(q){
+  if(nq(q).length<2)return '<p class="progt">'+L('Γράψτε τουλάχιστον 2 γράμματα.','Type at least 2 letters.')+'</p>';
+  var r=[];for(FINDMODE=1;FINDMODE<=3;FINDMODE++){r=findAll(q,FINDMODE);if(r.length)break}
+  if(!r.length){FINDMODE=1;return '<div class="empty">'+L('Δεν βρέθηκε πουθενά. Δοκιμάστε μία μόνο λέξη ή ένα κομμάτι της (π.χ. «θυμ» αντί για «θυμώνω»).','Not found anywhere. Try a single word or part of it (e.g. “ang” instead of “angry”).')+'</div>'}
+  return (FINDMODE>1?'<p class="progt" style="text-align:left">💡 '+L('Δεν βρέθηκε ακριβώς έτσι — δείτε τι μοιάζει:','Not found exactly — here is what looks similar:')+'</p>':'')+
+   '<p class="progt" style="text-align:left">🔎 '+L('Βρέθηκε σε ','Found in ')+r.length+(r.length===1?L(' σημείο',' place'):L(' σημεία',' places'))+'</p>'+
+   r.slice(0,80).map(function(x){return '<button class="fres" onclick="EP.openFound(\''+x.c.id+'\','+(x.i+1)+')"><small>'+x.c.emoji+' '+esc(T(x.c.name))+' · '+L('Ημέρα ','Day ')+(x.i+1)+' · '+esc(x.lbl)+'</small><b>'+esc(x.c.days[x.i][LANG].t)+'</b>'+x.sn+'</button>'}).join('')+
+   (r.length>80?'<p class="progt">'+L('…και άλλα. Γράψτε περισσότερες λέξεις για πιο ακριβή αποτελέσματα.','…and more. Type more words for more precise results.')+'</p>':'');
+}
+function vFind(){
+  return topbar(L('Αναζήτηση','Search'))+
+  '<div class="hero" style="padding-top:4px"><div class="bust">🔎</div><h1>'+L('Βρείτε μια λέξη ή φράση','Find a word or phrase')+'</h1>'+
+  '<p class="sub">'+L('Θυμάστε κάτι που διαβάσατε ή ακούσατε; Γράψτε μια λέξη ή ένα κομμάτι της φράσης — δεν χρειάζονται τόνοι, και βρίσκει ακόμη κι αν γράψετε ανορθόγραφα.','Remember something you read or heard? Type a word or part of the phrase — spelling mistakes are fine.')+'</p></div>'+
+  '<div class="card search"><input id="fq" type="search" autocomplete="off" value="'+esc(FINDQ)+'" placeholder="'+L('π.χ. ποτάμι, ψυχή, «δεν εξαρτάται»','e.g. river, soul, “not up to us”')+'" oninput="EP.find(this.value)"></div>'+
+  '<div id="fres">'+(FINDQ?findResults(FINDQ):'')+'</div>'+
+  '<button class="big ghost small" onclick="EP.go(\'\')">🏛️ '+L('Όλοι οι σοφοί','All the sages')+'</button>'+
+  safeLine()+foot();
+}
+function highlight(q){
+  var root=$('app');if(nq(q).length<2||!root)return;
+  var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),nodes=[],first=null;
+  while(w.nextNode()){var p=w.currentNode.parentNode;if(p&&!/^(TEXTAREA|BUTTON|SCRIPT|INPUT)$/.test(p.nodeName)&&!(p.closest&&p.closest('button')))nodes.push(w.currentNode)}
+  nodes.forEach(function(tn){var s=tn.nodeValue,sp=spans(s,q,FINDMODE);if(!sp.length)return;
+    var fr=document.createDocumentFragment(),last=0;
+    sp.forEach(function(x){fr.appendChild(document.createTextNode(s.slice(last,x[0])));var mk=document.createElement('mark');mk.textContent=s.slice(x[0],x[1]);fr.appendChild(mk);if(!first)first=mk;last=x[1]});
+    fr.appendChild(document.createTextNode(s.slice(last)));tn.parentNode.replaceChild(fr,tn)});
+  if(first)setTimeout(function(){try{first.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}},120);
 }
 
 /* ---------------- ΝΕΟ: λόγιο της ημέρας, σερί, συλλογή ---------------- */
@@ -731,6 +828,7 @@ function vHome(){
   '<div class="hero"><div class="bust"><img src="sofoi-icon-192.png" alt="" width="96" height="96" style="border-radius:22px;box-shadow:0 0 26px rgba(240,208,96,.45)" onerror="this.outerHTML=\'🦉\'"></div><h1>'+L('7 ημέρες με τους Σοφούς','7 days with the Sages')+'</h1>'+
   '<p class="sub">'+L('Διαλέξτε έναν σοφό. Για 7 ημέρες: ένα λόγιο σε απλά λόγια, ένα παράδειγμα από τη ζωή και μία μικρή άσκηση.','Choose a sage. For 7 days: one saying in plain words, one example from life and one small exercise.')+'</p></div>'+
   '<button class="big gold" onclick="EP.go(\'help\')">🧭 '+L('Τι σας απασχολεί σήμερα;','What is on your mind today?')+'</button>'+
+  '<button class="big blue" onclick="EP.go(\'find\')">🔎 '+L('Αναζήτηση λέξης ή φράσης','Search a word or phrase')+'</button>'+
   vWisdom()+installBtn()+
   '<div class="lbl" style="color:var(--gold);margin:20px 0 0">🏛️ '+L('Διαλέξτε σοφό','Choose a sage')+' ('+COURSES.length+')</div>'+
   COURSES.map(function(c){var n=doneCount(c.id);
@@ -870,6 +968,7 @@ var EP={
  go:function(h){location.hash=h?'#'+h:'#start'},
  back:function(){
    var r=route();
+   if(r.v==='day'&&FINDHL&&FINDQ){FINDHL=false;EP.go('find');return}
    if(r.v==='day'||r.v==='end'){EP.go(r.c.id);return}
    if(r.v!=='home'){EP.go('');return}
    if(STANDALONE){location.href='https://innerlife1111.pages.dev/';return}
@@ -957,6 +1056,8 @@ var EP={
       '<p><b>📱 iPhone (Safari):</b> tap <b>Share</b> (the square with the up arrow) → <b>“Add to Home Screen”</b> → <b>Add</b>.</p><p><b>📱 Android (Chrome):</b> tap the <b>three dots ⋮</b> top right → <b>“Install app”</b> or <b>“Add to Home screen”</b>.</p><p>The golden owl 🦉 will appear among your apps and open like a normal app.</p>')+
     '<button class="big gold" onclick="EP.close()">👍 '+L('Εντάξει','OK')+'</button>');
  },
+ find:function(v){FINDQ=v;try{sessionStorage.setItem('sofoi7-q',v)}catch(e){}clearTimeout(EP._ft);EP._ft=setTimeout(function(){var b=$('fres');if(b)b.innerHTML=v?findResults(v):''},180)},
+ openFound:function(id,n){FINDHL=true;findResults(FINDQ);EP.go(id+'-'+n)},
  close:function(){var s=$('sheet');if(s)s.remove()}
 };
 function sheet(html){EP.close();var d=document.createElement('div');d.className='sheet';d.id='sheet';d.innerHTML='<div class="box">'+html+'</div>';d.onclick=function(e){if(e.target===d)EP.close()};document.body.appendChild(d)}
@@ -970,6 +1071,7 @@ function route(){
   var m;
   if(h==='notes')return {v:'notes'};
   if(h==='help')return {v:'help'};
+  if(h==='find')return {v:'find'};
   if((m=/^help-([a-z]+)$/.exec(h)))return {v:'help',t:m[1]};
   if((m=/^day([1-7])$/.exec(h)))return {v:'day',c:course('ep'),i:+m[1]-1};
   if(h==='end')return {v:'end',c:course('ep')};
@@ -983,11 +1085,14 @@ function render(){
   armed={};EP.close();
   var r=route();
   document.documentElement.lang=LANG;
-  document.title=r.v==='help'?L('Τι σας απασχολεί; · Σοφοί','What is on your mind? · Sages'):r.c&&r.v!=='home'?L('7 ημέρες ','7 days ')+T(r.c.withName):L('7 ημέρες με τους Σοφούς','7 days with the Sages');
-  $('app').innerHTML = r.v==='day'?vDay(r.c,r.i):r.v==='end'?vEnd(r.c):r.v==='course'?vCourse(r.c):r.v==='notes'?vNotes():r.v==='help'?vHelp():vHome();
+  document.title=r.v==='find'?L('Αναζήτηση · Σοφοί','Search · Sages'):r.v==='help'?L('Τι σας απασχολεί; · Σοφοί','What is on your mind? · Sages'):r.c&&r.v!=='home'?L('7 ημέρες ','7 days ')+T(r.c.withName):L('7 ημέρες με τους Σοφούς','7 days with the Sages');
+  $('app').innerHTML = r.v==='day'?vDay(r.c,r.i):r.v==='end'?vEnd(r.c):r.v==='course'?vCourse(r.c):r.v==='notes'?vNotes():r.v==='help'?vHelp():r.v==='find'?vFind():vHome();
   if(r.v==='notes')fillNotes();
   Array.prototype.forEach.call(document.querySelectorAll('#app textarea'),grow);
   window.scrollTo(0,0);
+  if(r.v==='day'&&FINDHL&&FINDQ)highlight(FINDQ);
+  else if(r.v!=='day')FINDHL=false;
+  if(r.v==='find'){var fi=$('fq');if(fi&&!FINDQ)try{fi.focus()}catch(e){}}
 }
 /* ?c=ep στη διεύθυνση ανοίγει κατευθείαν έναν σοφό */
 (function(){try{var c=new URLSearchParams(location.search).get('c');if(c&&course(c)&&!location.hash)history.replaceState(null,'','#'+c)}catch(e){}})();
