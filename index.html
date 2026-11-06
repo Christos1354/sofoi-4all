@@ -545,13 +545,16 @@ function streak(){
   var n=0;while(set[todayKey(d)]){n++;d.setDate(d.getDate()-1)}return n;
 }
 function collected(){return COURSES.filter(function(c){return doneCount(c.id)===7}).length}
-function vWisdom(){
+function vWisdom(noStats){
   var x=dayOfWisdom(),D=x.c.days[x.i][LANG],s=streak(),cc=collected();
   return '<div class="card quote wisdom"><div class="lbl">🌅 '+L('Το λόγιο της ημέρας','Saying of the day')+'</div>'+
    '<div class="tr" style="font-size:22px">«'+esc(shortTr(D.tr,220))+'»</div><div class="src">— '+esc(T(x.c.name))+' · '+esc(T(x.c.days[x.i].src))+'</div>'+
    '<div class="row" style="margin-top:10px"><button class="big violet small" onclick="EP.go(\''+x.c.id+'-'+(x.i+1)+'\')">📖 '+L('Διαβάστε το','Read it')+'</button>'+
-   '<button class="big ghost small" onclick="EP.card(\''+x.c.id+'\','+x.i+')">📸 '+L('Κάρτα για story','Story card')+'</button></div>'+sendBtn(x.c.id,x.i)+'</div>'+
-  '<div class="stats"><div onclick="EP.go(\'week\')">🔥 <b>'+s+'</b><small>'+(s===1?L('ημέρα στη σειρά','day in a row'):L('ημέρες στη σειρά','days in a row'))+'</small></div>'+
+   '<button class="big ghost small" onclick="EP.card(\''+x.c.id+'\','+x.i+')">📸 '+L('Κάρτα για story','Story card')+'</button></div>'+sendBtn(x.c.id,x.i)+'</div>'+(noStats?'':statsBox());
+}
+function statsBox(){
+  var s=streak(),cc=collected();
+  return '<div class="stats"><div onclick="EP.go(\'week\')">🔥 <b>'+s+'</b><small>'+(s===1?L('ημέρα στη σειρά','day in a row'):L('ημέρες στη σειρά','days in a row'))+'</small></div>'+
    '<div onclick="EP.go(\'shelf\')">🏆 <b>'+cc+'/'+COURSES.length+'</b><small>'+L('σοφοί στη συλλογή σας','sages in your collection')+'</small></div></div>';
 }
 
@@ -865,10 +868,13 @@ function vHome(){
   vToday()+
   '<button class="big gold" onclick="EP.go(\'help\')">🧭 '+L('Τι σας απασχολεί σήμερα;','What is on your mind today?')+'</button>'+
   '<button class="big blue" onclick="EP.go(\'find\')">🔎 '+L('Αναζήτηση λέξης ή φράσης','Search a word or phrase')+'</button>'+
-  vWisdom()+installBtn()+
+  vWisdom(true)+
+  vJourneysBox()+vAllSages()+notesBtn()+
+  statsBox()+installBtn()+
+
   '<div class="row" style="margin-top:14px"><button class="big rose small" onclick="EP.go(\'favs\')">❤️ '+L('Αγαπημένα','Favourites')+(nf?' ('+nf+')':'')+'</button><button class="big violet small" onclick="EP.go(\'week\')">📅 '+L('Η εβδομάδα μου','My week')+'</button></div>'+
   '<div class="row"><button class="big gold small" onclick="EP.go(\'shelf\')">🏆 '+L('Η συλλογή μου','My collection')+'</button><button class="big ghost small" onclick="EP.go(\'begin\')">👋 '+L('Πού να ξεκινήσω;','Where do I start?')+'</button></div>'+
-  vJourneysBox()+vAllSages()+notesBtn()+howtoBlock()+safeLine()+foot();
+  howtoBlock()+safeLine()+foot();
 }
 function vAllSages(){
   return '<div class="lbl" style="color:var(--gold);margin:24px 0 2px;font-size:22px">🏛️ '+L('Διαλέξτε σοφό','Choose a sage')+' ('+COURSES.length+')</div>'+
