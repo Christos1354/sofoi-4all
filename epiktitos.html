@@ -175,6 +175,7 @@ mark{background:#ffe066;color:#2a1a00;border-radius:4px;padding:0 2px}
 .mtile.dark{color:#2b1d00}.mtile.dark b{text-shadow:none}
 .mtile:active{transform:scale(.97)}
 .card.note{background:linear-gradient(160deg,#fff7ed,#ffedd5);border-left:7px solid #f59e0b}
+.ghead{color:var(--gold);font-size:19px;font-weight:800;margin:18px 0 2px;padding-bottom:4px;border-bottom:1px solid rgba(240,208,96,.35)}
 .tile.won{box-shadow:0 0 0 4px #f0d060,0 6px 14px rgba(0,0,0,.45)}
 /* νέο 1-11-2026 */
 .wrap,.sheet .box{zoom:var(--z,1)}
@@ -637,8 +638,8 @@ function jDone(id,k){return jst(id).done.indexOf(k)>=0}
 function jCount(id){return jst(id).done.filter(function(k){return k>=0&&k<7}).length}
 function jNext(id){for(var k=0;k<7;k++)if(!jDone(id,k))return k;return -1}
 function jBtn(J){var n=jCount(J.id);
-  return '<button class="jbtn" onclick="EP.go(\'j-'+J.id+'\')"><span class="em">'+J.e+'</span><span style="flex:1"><b>'+esc(T(J.n))+'</b>'+(n?'<small>'+(n===7?'🏆 '+L('Ολοκληρώθηκε','Completed'):n+'/7')+'</small>':'')+'</span></button>'}
-function vJourneysBoxOld(){
+  return '<button class="jbtn" style="background:'+J.g+'" onclick="EP.go(\'j-'+J.id+'\')"><span class="em">'+J.e+'</span><span style="flex:1"><b>'+esc(T(J.n))+'</b>'+(n?'<small>'+(n===7?'🏆 '+L('Ολοκληρώθηκε','Completed'):n+'/7')+'</small>':'')+'</span></button>'}
+function vJourneysBox(){
   return '<div class="lbl" style="color:var(--gold);margin:22px 0 4px">🧭 '+L('7 ημέρες για…','7 days for…')+'</div>'+
   '<p class="progt" style="text-align:left;margin:0 0 6px">'+L('Ένα θέμα, επτά σοφοί: κάθε μέρα ένας διαφορετικός σοφός για αυτό που σας απασχολεί.','One topic, seven sages: each day a different sage for what is on your mind.')+'</p>'+
   '<div class="jgrid">'+JOURNEYS.map(jBtn).join('')+'</div>';
@@ -859,12 +860,19 @@ var MENU=[
 function vHome(){
   var nf=arr('fav').length;
   return topbar(L('7 ημέρες με τους Σοφούς','7 days with the Sages'))+
-  '<div class="hero" style="padding-bottom:4px"><div class="bust"><img src="sofoi-icon-192.png" alt="" width="84" height="84" style="border-radius:20px;box-shadow:0 0 26px rgba(240,208,96,.45)" onerror="this.outerHTML=\'🦉\'"></div><h1>'+L('7 ημέρες με τους Σοφούς','7 days with the Sages')+'</h1>'+
-  '<p class="sub">'+L('Πατήστε ένα κουμπί για να ξεκινήσετε.','Tap a button to begin.')+'</p></div>'+
+  '<div class="hero"><div class="bust"><img src="sofoi-icon-192.png" alt="" width="96" height="96" style="border-radius:22px;box-shadow:0 0 26px rgba(240,208,96,.45)" onerror="this.outerHTML=\'🦉\'"></div><h1>'+L('7 ημέρες με τους Σοφούς','7 days with the Sages')+'</h1>'+
+  '<p class="sub">'+L('Διαλέξτε έναν σοφό. Για 7 ημέρες: ένα λόγιο σε απλά λόγια, η φιλοσοφία του στη ζωή και μία μικρή άσκηση.','Choose a sage. For 7 days: one saying in plain words, its philosophy in everyday life and one small exercise.')+'</p></div>'+
   vToday()+
-  '<div class="menu">'+MENU.map(function(m){var extra=m.h==='favs'&&nf?' ('+nf+')':m.h==='shelf'?' ('+collected()+'/'+COURSES.length+')':'';
-    return '<button class="mtile'+(m.dark?' dark':'')+'" style="background:'+m.g+'" onclick="EP.go(\''+m.h+'\')"><span class="em">'+m.e+'</span><b>'+esc(T(m.n))+extra+'</b></button>'}).join('')+'</div>'+
-  installBtn()+safeLine()+foot();
+  '<button class="big gold" onclick="EP.go(\'help\')">🧭 '+L('Τι σας απασχολεί σήμερα;','What is on your mind today?')+'</button>'+
+  '<button class="big blue" onclick="EP.go(\'find\')">🔎 '+L('Αναζήτηση λέξης ή φράσης','Search a word or phrase')+'</button>'+
+  vWisdom()+installBtn()+
+  '<div class="row" style="margin-top:14px"><button class="big rose small" onclick="EP.go(\'favs\')">❤️ '+L('Αγαπημένα','Favourites')+(nf?' ('+nf+')':'')+'</button><button class="big violet small" onclick="EP.go(\'week\')">📅 '+L('Η εβδομάδα μου','My week')+'</button></div>'+
+  '<div class="row"><button class="big gold small" onclick="EP.go(\'shelf\')">🏆 '+L('Η συλλογή μου','My collection')+'</button><button class="big ghost small" onclick="EP.go(\'begin\')">👋 '+L('Πού να ξεκινήσω;','Where do I start?')+'</button></div>'+
+  vJourneysBox()+vAllSages()+notesBtn()+howtoBlock()+safeLine()+foot();
+}
+function vAllSages(){
+  return '<div class="lbl" style="color:var(--gold);margin:24px 0 2px;font-size:22px">🏛️ '+L('Διαλέξτε σοφό','Choose a sage')+' ('+COURSES.length+')</div>'+
+  GROUPS.map(function(g){return '<div class="ghead">'+g.e+' '+esc(T(g.n))+'</div>'+g.ids.map(function(id){return courseBtn(course(id))}).join('')}).join('');
 }
 function vGroupsPage(){
   return topbar(L('Διαλέξτε σοφό','Choose a sage'))+vGroups()+
@@ -875,15 +883,17 @@ function vWisdomPage(){
   '<button class="big ghost small" onclick="EP.go(\'\')">🏛️ '+L('Αρχική','Home')+'</button>'+foot();
 }
 function vInfo(){
-  return topbar(L('Πώς λειτουργεί','How it works'))+
-  '<div class="card"><h2>🧭 '+L('Πώς λειτουργεί','How it works')+'</h2><ol>'+
+  return topbar(L('Πώς λειτουργεί','How it works'))+howtoBlock()+
+  '<button class="big ghost small" onclick="EP.go(\'\')">🏛️ '+L('Αρχική','Home')+'</button>'+safeLine()+foot();
+}
+function howtoBlock(){
+  return '<div class="card"><h2>🧭 '+L('Πώς λειτουργεί','How it works')+'</h2><ol>'+
    L('<li><b>Το πρωί</b> (5 λεπτά): διαβάστε το λόγιο, την εξήγηση και τη «φιλοσοφία στη ζωή», και πείτε την πρωινή φράση.</li><li><b>Μέσα στη μέρα</b>: κάντε τη μία, μικρή άσκηση.</li><li><b>Το βράδυ</b>: απαντήστε με δυο λόγια στη βραδινή ερώτηση.</li><li>Πατήστε <b>«Ολοκλήρωσα»</b> και την επόμενη μέρα συνεχίζετε.</li>',
      '<li><b>In the morning</b> (5 minutes): read the saying, the explanation and “Philosophy in life”, and say the morning sentence.</li><li><b>During the day</b>: do the one small exercise.</li><li><b>In the evening</b>: answer the evening question in a few words.</li><li>Tap <b>“I completed it”</b> and continue the next day.</li>')+'</ol>'+
    '<p>🔒 '+L('Ό,τι γράφετε μένει <b>μόνο στη δική σας συσκευή</b> — δεν χρειάζεται λογαριασμός και δεν στέλνεται πουθενά. Όλες οι σημειώσεις σας βρίσκονται μαζεμένες στο κουμπί <b>«📔 Οι σημειώσεις μου»</b>, όπου μπορείτε να τις ψάξετε, να τις διορθώσετε, να τις σβήσετε ή να τις φυλάξετε σε αρχείο.','Whatever you write stays <b>only on your own device</b> — no account, nothing is sent anywhere. All your notes are gathered under <b>“📔 My notes”</b>, where you can search, edit, delete or save them to a file.')+'</p>'+
    '<div class="row"><button class="big violet small" onclick="EP.remind()">⏰ '+L('Υπενθύμιση','Reminder')+'</button><button class="big ghost small" onclick="EP.share()">📤 '+L('Στείλτε το σε φίλο','Send to a friend')+'</button></div></div>'+
   '<button class="big ghost small" onclick="EP.go(\'flyer\')">📄 '+L('Φυλλάδιο με QR για να το μοιραστείτε','Flyer with QR code to share')+'</button>'+
-  (STANDALONE?'<p class="foot"><a href="sofos/">📚 '+L('Όλοι οι σοφοί σε ξεχωριστές σελίδες','All the sages on separate pages')+'</a></p>':'')+
-  '<button class="big ghost small" onclick="EP.go(\'\')">🏛️ '+L('Αρχική','Home')+'</button>'+safeLine()+foot();
+  (STANDALONE?'<p class="foot"><a href="sofos/">📚 '+L('Όλοι οι σοφοί σε ξεχωριστές σελίδες','All the sages on separate pages')+'</a></p>':'');
 }
 
 /* ---------------- ΣΕΛΙΔΑ ΕΝΟΣ ΣΟΦΟΥ ---------------- */
